@@ -127,7 +127,8 @@ class _SearchableDropDownState extends State<SearchableDropDown> {
                     ),
                     onTap: () {
                       widget.onSelect(_filteredList[index]);
-                      Get.back();
+                      // Get.back();
+                      Navigator.of(context).pop();
                     },
                   );
                 },

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:ahec_task_manager/model/order_model.dart';
 import 'package:ahec_task_manager/res/components/app_alerts.dart';
+import 'package:ahec_task_manager/view_models/controller/base_controller.dart';
 import 'package:ahec_task_manager/view_models/services/order_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,7 +13,7 @@ import 'auth/auth_controller.dart';
 import 'client_controller.dart';
 import 'list_controller.dart';
 
-class OrderController extends GetxController {
+class OrderController extends GetxController with BaseController {
   final AuthController _authController = Get.find<AuthController>();
   final ClientController _clientController = Get.find<ClientController>();
   final ListController _listController = Get.find<ListController>(); // ADD
@@ -138,8 +139,8 @@ class OrderController extends GetxController {
     if (clientSelected.value == "Select Client") return null;
     try {
       return _clientController.clients.firstWhere(
-            (client) =>
-        "${client.userName.trim()} (${client.mobile.trim()})" ==
+        (client) =>
+            "${client.userName.trim()} (${client.mobile.trim()})" ==
             clientSelected.value,
       );
     } catch (_) {
@@ -192,7 +193,6 @@ class OrderController extends GetxController {
   List<OrderData> get displayOrders =>
       isSearching.value ? filteredOrders : orders;
 
-
   Future<void> getOrderList() async {
     final int rmId = _listController.userRmId.value;
     // final int rmId = _clientController.userRmId.value;
@@ -221,10 +221,10 @@ class OrderController extends GetxController {
       print("Orders fetched: ${orders.length} / ${totalOrders.value}");
     } on AppExceptions catch (e) {
       print("Order list fetch error: $e");
-      AppAlerts.error(e.cleanMessage);
+      handleError(e);
     } catch (e) {
       print("Unexpected error fetching orders: $e");
-      AppAlerts.error("Failed to load order list.");
+      handleError("Failed to load order list.");
     } finally {
       isLoading.value = false;
     }
@@ -251,10 +251,10 @@ class OrderController extends GetxController {
       print("More orders loaded. Total: ${orders.length}");
     } on AppExceptions catch (e) {
       currentPage.value--;
-      AppAlerts.error(e.cleanMessage);
+      handleError(e);
     } catch (e) {
       currentPage.value--;
-      AppAlerts.error("Failed to load more orders.");
+      handleError("Failed to load more orders.");
     } finally {
       isLoadingMore.value = false;
     }
@@ -339,79 +339,72 @@ class OrderController extends GetxController {
 
   Future<void> submitOrder() async {
     if (!validateForm()) return;
-
     final ClientData? client = getSelectedClientObject();
     if (client == null) {
-      AppAlerts.error("Selected client not found. Please reselect.");
+      handleError("Selected client not found. Please reselect.");
       return;
     }
-
     final int rmId = selectedRmId;
     if (rmId == 0) {
-      AppAlerts.error("RM ID is not set. Please select an RM.");
+      handleError("RM ID is not set. Please select an RM.");
       return;
     }
-
-    final String? serviceId =
-    _listController.getServiceIdFromName(serviceTypeSelected.value);
+    final String? serviceId = _listController.getServiceIdFromName(
+      serviceTypeSelected.value,
+    );
     if (serviceId == null) {
-      AppAlerts.error("Invalid service selected. Please reselect.");
+      handleError("Invalid service selected. Please reselect.");
       return;
     }
-
-    final String? currencyCode =
-    _listController.getCurrencyCodeFromName(currencySelected.value);
-    if (currencyCode == null) {
-      AppAlerts.error("Invalid currency selected. Please reselect.");
+    // Currency ID (int) chahiye - "AUD" nahi
+    final int? currencyId = _listController.getCurrencyIdFromName(
+      currencySelected.value,
+    );
+    if (currencyId == null) {
+      handleError("Invalid currency selected. Please reselect.");
       return;
     }
-
+    // order_type DB mein int hai
+    final Map<String, int> orderTypeMap = {"New Order": 1, "Existing Order": 2};
+    final int orderTypeInt = orderTypeMap[orderTypeSelected.value] ?? 1;
     try {
       isLoading.value = true;
 
       final Map<String, dynamic> data = {
         "user_email": client.userEmail,
-        "en_first_name": client.userName,
-        "en_email":client.userEmail,
-        "phone_code":client.phoneCode,
-        "en_mobile":client.mobile,
-        "rm_id": rmId.toString(),
+        "rm_id": rmId,
         "univercity_name": client.univercityName,
-        "order_type": orderTypeSelected.value,
+        "order_type": orderTypeInt, // ✅ int
         "payment_type": paymentTypeSelected.value,
-        "en_service": serviceId,
+        "en_service": int.tryParse(serviceId) ?? serviceId, // ✅ int
         "modal_en_subject": moduleCode.text.trim(),
         "modal_en_module_name": moduleName.text.trim(),
-        "deadline": _formatDeadline(deadline.text.trim()), // ✅ YYYY-MM-DD format
-        "word_count": wordCount.text.trim(),
+        "deadline": _formatDeadline(deadline.text.trim()),
+        "word_count": int.tryParse(wordCount.text.trim()) ?? 0,
         "assignment_type": type.text.trim(),
-        "currency_type": currencyCode,
-        "client_amount": clientAmount.text.trim(),
-        "inr_amount": inrAmount.text.trim(),
-        "aud_amount": audAmount.text.trim(),
+        "currency_type": currencyId, // ✅ int, not "AUD"
+        "client_amount": double.tryParse(clientAmount.text.trim()) ?? 0,
+        "inr_amount": double.tryParse(inrAmount.text.trim()) ?? 0,
+        "aud_amount": double.tryParse(audAmount.text.trim()) ?? 0,
         "modal_en_query": shortNote.text.trim(),
         "tranxid": transactionId.text.trim(),
-        // Always send pre_order_id - backend getordernumber() expects it
-        // "pre_order_id": orderTypeSelected.value == "Existing Order" &&
-        //     orderIdSelected.value != "Select Order ID"
-        //     ? orderIdSelected.value
-        //     : "",
       };
-
+      if (orderTypeSelected.value == "Existing Order" &&
+          orderIdSelected.value != "Select Order ID") {
+        data["pre_order_id"] = orderIdSelected.value;
+      }
       print("Submitting order: $data");
-
       final response = await _orderService.addOrder(
         data,
         paymentImage: paymentImage.value,
       );
-
       final addOrderModel = AddOrderModel.fromJson(response);
-
       if (addOrderModel.status == 200 || addOrderModel.status == 201) {
-        AppAlerts.success(addOrderModel.message);
+        handleSuccess(addOrderModel.message);
         resetForm();
         rmIdSelected.value = _listController.rmIdSelected.value;
         await refreshOrders();
+        Get.back();
       } else {
         AppAlerts.error(addOrderModel.message);
       }
@@ -436,8 +429,6 @@ class OrderController extends GetxController {
     return orders.where((o) => o.orderDate == todayStr).toList();
   }
 }
-
-
 
 // import 'dart:io';
 // import 'package:ahec_task_manager/model/order_model.dart';

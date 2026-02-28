@@ -12,7 +12,7 @@ class AppAlerts {
       backgroundColor: Colors.red.shade700,
       colorText: Colors.white,
       margin: const EdgeInsets.all(15),
-      duration: const Duration(seconds: 3),
+      // duration: const Duration(seconds: 3),
     );
   }
   static void success(String message){
