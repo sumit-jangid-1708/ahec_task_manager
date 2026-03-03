@@ -1,4 +1,5 @@
 import 'package:ahec_task_manager/model/dashboard_data_model.dart';
+import 'package:ahec_task_manager/view_models/controller/base_controller.dart';
 import 'package:ahec_task_manager/view_models/services/dashboard_service.dart';
 import 'package:get/get.dart';
 
@@ -6,7 +7,7 @@ import '../../data/app_exceptions.dart';
 import '../../res/components/app_alerts.dart';
 import 'list_controller.dart';
 
-class DashboardController extends GetxController {
+class DashboardController extends GetxController with BaseController{
   final DashboardService _dashboardService = DashboardService();
   final ListController _listController = Get.find<ListController>(); // CHANGED
 
@@ -52,16 +53,17 @@ class DashboardController extends GetxController {
       dashboardData.value = DashboardDataModel.fromJson(response);
       print("Dashboard data loaded successfully.");
     } on AppExceptions catch (e) {
-      AppAlerts.error(e.cleanMessage);
+      handleError(e.cleanMessage);
+      // AppAlerts.error(e.cleanMessage);
     } catch (e) {
-      AppAlerts.error("Failed to load dashboard data.");
+      handleError("Failed to load dashboard data.");
+      // AppAlerts.error("Failed to load dashboard data.");
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> refreshDashboard() async => await getDashboardData();
-
   String get weekInr => dashboardData.value?.data.weekTotalAmount.inr ?? "0.00";
   String get weekAud => dashboardData.value?.data.weekTotalAmount.aud ?? "0.00";
   String get monthInr => dashboardData.value?.data.monthTotalCurrencyAmount.inr ?? "0.00";

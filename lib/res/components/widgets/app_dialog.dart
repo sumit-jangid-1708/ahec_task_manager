@@ -41,7 +41,7 @@ class AppDialog {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Get.back();
+                    Navigator.of(Get.context!).pop();
                     onConfirm?.call();
                   },
                   style: ElevatedButton.styleFrom(
@@ -72,12 +72,13 @@ class AppDialog {
         content: Text(message, style: GoogleFonts.poppins()),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
+            onPressed: () => Navigator.of(Get.context!).pop(),
             child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
-              Get.back();
+              // Get.back();
+              Navigator.of(Get.context!).pop();
               onConfirm();
             },
             child: Text("Confirm", style: GoogleFonts.poppins(color: _primaryColor, fontWeight: FontWeight.bold)),
@@ -112,6 +113,6 @@ class AppDialog {
   }
 
   static void hideLoading() {
-    if (Get.isDialogOpen ?? false) Get.back();
+    if (Get.isDialogOpen ?? false) Navigator.of(Get.context!).pop();
   }
 }

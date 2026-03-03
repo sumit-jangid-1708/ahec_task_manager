@@ -2,6 +2,7 @@ import 'package:ahec_task_manager/model/currency_model.dart';
 import 'package:ahec_task_manager/model/rm_list_model.dart';
 import 'package:ahec_task_manager/res/components/app_alerts.dart';
 import 'package:ahec_task_manager/res/storage_keys.dart';
+import 'package:ahec_task_manager/view_models/controller/base_controller.dart';
 import 'package:ahec_task_manager/view_models/services/list_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -11,10 +12,10 @@ import '../../data/app_exceptions.dart';
 import '../../model/servcie_list_model.dart';
 import 'auth/auth_controller.dart';
 
-class ListController extends GetxController {
+class ListController extends GetxController with BaseController {
   final ListService _listService = ListService();
   final GetStorage _storage = GetStorage();
-  late final AuthController _authController;
+  final AuthController _authController = Get.find<AuthController>();
 
   var isLoading = false.obs;
 
@@ -23,7 +24,8 @@ class ListController extends GetxController {
   var rmList = <String>[].obs;
   var rmIdMap = <String, String>{}.obs;
   var rmIdSelected = "".obs;
-  var userRmId = 0.obs; // Logged-in user's matched RM ID (used by all controllers)
+  var userRmId =
+      0.obs; // Logged-in user's matched RM ID (used by all controllers)
 
   // ── Service list ─────────────────────────────────────────────────────────
   final serviceListModel = Rx<ServiceListModel?>(null);
@@ -39,7 +41,7 @@ class ListController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _authController = Get.find<AuthController>();
+    // _authController = Get.find<AuthController>();
     // RM list must resolve first — others depend on userRmId
     getRmList();
     getServiceList();
@@ -57,7 +59,8 @@ class ListController extends GetxController {
   String get _currentUserEmail {
     final stored = _storage.read(StorageKeys.teamEmail) ?? '';
     if (stored.isNotEmpty) return stored.trim().toLowerCase();
-    return _authController.loginResponse?.user.teamEmail.trim().toLowerCase() ?? '';
+    return _authController.loginResponse?.user.teamEmail.trim().toLowerCase() ??
+        '';
   }
 
   // ── RM List ───────────────────────────────────────────────────────────────
@@ -70,23 +73,28 @@ class ListController extends GetxController {
       rmIdModel.value = RmIDListModel.fromJson(response);
 
       if (rmIdModel.value == null || rmIdModel.value!.rmidList.isEmpty) {
-        AppAlerts.error("No RM data available. Please contact admin.");
+        // AppAlerts.error("No RM data available. Please contact admin.");
+        handleError("No RM data available. Please contact admin.");
         return;
       }
 
       final allRms = rmIdModel.value!.rmidList;
 
       // Build full RM dropdown list and map for all controllers
-      rmList.value = allRms.map((item) => '${item.rmid} - ${item.name}').toList();
+      rmList.value = allRms
+          .map((item) => '${item.rmid} - ${item.name}')
+          .toList();
       rmIdMap.value = {
-        for (var item in allRms) '${item.rmid} - ${item.name}': item.id.toString()
+        for (var item in allRms)
+          '${item.rmid} - ${item.name}': item.id.toString(),
       };
 
       final String currentName = _currentUserName;
       final String currentEmail = _currentUserEmail;
 
       if (currentName.isEmpty || currentEmail.isEmpty) {
-        AppAlerts.error("User session data missing. Please login again.");
+        handleError("User session data missing. Please login again");
+        // AppAlerts.error("User session data missing. Please login again.");
         return;
       }
 
@@ -94,18 +102,21 @@ class ListController extends GetxController {
 
       // Match by email + name first
       RmIDItem? matchedRm = allRms.firstWhereOrNull(
-            (item) =>
-        item.email.trim().toLowerCase() == currentEmail &&
+        (item) =>
+            item.email.trim().toLowerCase() == currentEmail &&
             item.name.trim().toLowerCase() == currentName.toLowerCase(),
       );
 
       // Fallback: email-only match
       matchedRm ??= allRms.firstWhereOrNull(
-            (item) => item.email.trim().toLowerCase() == currentEmail,
+        (item) => item.email.trim().toLowerCase() == currentEmail,
       );
 
       if (matchedRm == null) {
-        AppAlerts.error("Your account was not found in the RM list. Please contact admin.");
+        handleSuccess(
+          "Your account was not found in the RM list. Please contact admin.",
+        );
+        // AppAlerts.error("Your account was not found in the RM list. Please contact admin.");
         return;
       }
 
@@ -113,13 +124,17 @@ class ListController extends GetxController {
       rmIdSelected.value = '${matchedRm.rmid} - ${matchedRm.name}';
       userRmId.value = matchedRm.id;
 
-      print("RM matched: ${matchedRm.name} (${matchedRm.email}) | ID: ${matchedRm.id}");
+      print(
+        "RM matched: ${matchedRm.name} (${matchedRm.email}) | ID: ${matchedRm.id}",
+      );
       print("Total RMs in dropdown: ${rmList.length}");
     } on AppExceptions catch (e) {
-      AppAlerts.error(e.cleanMessage);
+      handleError(e.cleanMessage);
+      // AppAlerts.error(e.cleanMessage);
     } catch (e) {
       print("Unexpected error fetching RM list: $e");
-      AppAlerts.error("Failed to load RM data.");
+      handleError("Failed to loads RM data.");
+      // AppAlerts.error("Failed to load RM data.");
     } finally {
       isLoading.value = false;
     }
@@ -146,10 +161,12 @@ class ListController extends GetxController {
 
       print("Service list fetched: ${serviceList.length}");
     } on AppExceptions catch (e) {
-      AppAlerts.error(e.cleanMessage);
+      handleError(e.cleanMessage);
+      // AppAlerts.error(e.cleanMessage);
     } catch (e) {
       if (kDebugMode) print("Service list error: $e");
-      AppAlerts.error("Failed to load service list.");
+      // AppAlerts.error("Failed to load service list.");
+      handleError("Failed to load service list.");
     }
   }
 
@@ -167,32 +184,32 @@ class ListController extends GetxController {
       currencyCodeMap.value = {};
       currencyIdMap.value = {};
       for (var c in currencyModel.value!.currencyList!) {
-        final display = '${c.currencyCode} - ${c.currencyName} (${c.currencySymbol})';
+        final display =
+            '${c.currencyCode} - ${c.currencyName} (${c.currencySymbol})';
         currencyCodeMap[display] = c.currencyCode!;
         currencyIdMap[display] = c.currencyId!;
       }
 
       print("Currency list fetched: ${currencyList.length}");
     } on AppExceptions catch (e) {
-      AppAlerts.error(e.cleanMessage);
+      handleError(e.cleanMessage);
     } catch (e) {
       if (kDebugMode) print("Currency list error: $e");
-      AppAlerts.error("Failed to load currency list.");
+      // AppAlerts.error("Failed to load currency list.");
+      handleError("Failed to load currency list.");
     }
   }
 
   // ── Service helpers ───────────────────────────────────────────────────────
   String? getServiceIdFromName(String displayName) => serviceIdMap[displayName];
-  String? getServiceNameById(String id) => serviceListModel.value?.serviceList[id];
+  String? getServiceNameById(String id) =>
+      serviceListModel.value?.serviceList[id];
 
   // ── Currency helpers ──────────────────────────────────────────────────────
-  String? getCurrencyCodeFromName(String displayName) => currencyCodeMap[displayName];
+  String? getCurrencyCodeFromName(String displayName) =>
+      currencyCodeMap[displayName];
   int? getCurrencyIdFromName(String displayName) => currencyIdMap[displayName];
 }
-
-
-
-
 
 // import 'package:ahec_task_manager/model/currency_model.dart';
 // import 'package:ahec_task_manager/res/components/app_alerts.dart';

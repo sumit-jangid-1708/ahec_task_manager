@@ -14,3 +14,12 @@ class DashboardBinding extends Bindings {
     Get.put(DashboardController());
   }
 }
+// class DashboardBinding extends Bindings {
+//   @override
+//   void dependencies() {
+//     Get.put(ListController());
+//     Get.put(ClientController());
+//     Get.put(OrderController());
+//
+//   }
+// }

@@ -405,6 +405,7 @@ class OrderController extends GetxController with BaseController {
         rmIdSelected.value = _listController.rmIdSelected.value;
         await refreshOrders();
         Get.back();
+        // Navigator.of(Get.context!).pop();
       } else {
         AppAlerts.error(addOrderModel.message);
       }

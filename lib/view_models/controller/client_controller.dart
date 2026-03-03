@@ -1,14 +1,17 @@
+import 'package:ahec_task_manager/data/network/base_api_service.dart';
 import 'package:ahec_task_manager/model/client_model.dart';
 import 'package:ahec_task_manager/model/insert_client_model.dart';
 import 'package:ahec_task_manager/res/components/app_alerts.dart';
 import 'package:ahec_task_manager/view_models/services/client_service.dart';
+import 'package:ahec_task_manager/view_models/controller/base_controller.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/app_exceptions.dart';
 import 'list_controller.dart';
 
-class ClientController extends GetxController {
+class ClientController extends GetxController with BaseController {
   // RM data now lives in ListController
   final ListController _listController = Get.find<ListController>();
   final ClientService _clientService = ClientService();
@@ -114,9 +117,11 @@ class ClientController extends GetxController {
 
       print("Clients fetched: ${clients.length} / ${totalClients.value}");
     } on AppExceptions catch (e) {
-      AppAlerts.error(e.cleanMessage);
+      // AppAlerts.error(e.cleanMessage);
+      handleError(e.cleanMessage);
     } catch (e) {
-      AppAlerts.error("Failed to load client list.");
+      handleError("Failed to load client list");
+      // AppAlerts.error("Failed to load client list.");
     } finally {
       isLoading.value = false;
     }
@@ -141,10 +146,12 @@ class ClientController extends GetxController {
       print("More clients loaded. Total: ${clients.length}");
     } on AppExceptions catch (e) {
       currentPage.value--;
-      AppAlerts.error(e.cleanMessage);
+      handleError(e.cleanMessage);
+      // AppAlerts.error(e.cleanMessage);
     } catch (e) {
       currentPage.value--;
-      AppAlerts.error("Failed to load more clients.");
+      handleError("Failed to load more clients");
+      // AppAlerts.error("Failed to load more clients.");
     } finally {
       isLoadingMore.value = false;
     }
@@ -178,7 +185,8 @@ class ClientController extends GetxController {
 
       print("All clients loaded for dropdown: ${clients.length}");
     } catch (e) {
-      AppAlerts.error("Failed to load client list.");
+      // AppAlerts.error("Failed to load client list.");
+      handleError("Failed to load Client list");
     } finally {
       isLoading.value = false;
     }
@@ -191,7 +199,8 @@ class ClientController extends GetxController {
       final String? rmIdString =
       _listController.getRmIdFromName(_listController.rmIdSelected.value);
       if (rmIdString == null) {
-        AppAlerts.error("RM ID is not set. Please try logging in again.");
+        handleError("RM ID is not set. Please try logging in again.");
+        // AppAlerts.error("RM ID is not set. Please try logging in again.");
         return;
       }
 
@@ -212,16 +221,19 @@ class ClientController extends GetxController {
         _clearForm();
         await refreshClients();
         Navigator.of(Get.context!).pop();
-        Future.delayed(const Duration(milliseconds: 200), () {
-          AppAlerts.success(insertResponse.message);
-        });
+        AppAlerts.success(insertResponse.message);
+        // Future.delayed(const Duration(milliseconds: 200), () {
+        //   AppAlerts.success(insertResponse.message);
+        // });
       } else {
         AppAlerts.error(insertResponse.message);
       }
     } on AppExceptions catch (e) {
-      AppAlerts.error(e.cleanMessage);
+      // AppAlerts.error(e.cleanMessage);
+      handleError(e.cleanMessage, );
     } catch (e) {
-      AppAlerts.error("Failed to add client.");
+      handleError("Failed to add client");
+      // AppAlerts.error("Failed to add client.");
     } finally {
       isLoading.value = false;
     }

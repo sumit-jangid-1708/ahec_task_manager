@@ -14,7 +14,7 @@ class AppLockScreen extends StatefulWidget {
 
 class _AppLockScreenState extends State<AppLockScreen>
     with WidgetsBindingObserver {
-  final AuthController controller = Get.find<AuthController>();
+  AuthController get controller => Get.find<AuthController>();
   bool _isAuthenticating = false;
 
   @override
@@ -37,17 +37,30 @@ class _AppLockScreenState extends State<AppLockScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Re-trigger authentication when app is brought back to foreground
     if (state == AppLifecycleState.resumed &&
-        !controller.isAuthenticated.value) {
+        !controller.isAuthenticated.value &&
+        !_isAuthenticating) {
       _triggerAuth();
     }
+    // if (state == AppLifecycleState.resumed &&
+    //     !controller.isAuthenticated.value) {
+    //   _triggerAuth();
+    // }
   }
 
   Future<void> _triggerAuth() async {
-    if (_isAuthenticating) return; // Prevent duplicate authentication calls
+    if (_isAuthenticating) return;
+    if (!mounted) return;
     setState(() => _isAuthenticating = true);
     await controller.authenticate();
-    if (mounted) setState(() => _isAuthenticating = false);
+    if (!mounted) return;
+    setState(() => _isAuthenticating = false);
   }
+  // Future<void> _triggerAuth() async {
+  //   if (_isAuthenticating) return; // Prevent duplicate authentication calls
+  //   setState(() => _isAuthenticating = true);
+  //   await controller.authenticate();
+  //   if (mounted) setState(() => _isAuthenticating = false);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +166,10 @@ class _AppLockScreenState extends State<AppLockScreen>
                   onPressed: (){
                     AppDialog.confirm(
                       message: "Are you sure you want to Logout?",
-                      onConfirm:()=> controller.logout(),
+                      // onConfirm:()=> controller.logout(),
+                      onConfirm: () {
+                        if (mounted) controller.logout();
+                      },
                     );
                   },
                   style:

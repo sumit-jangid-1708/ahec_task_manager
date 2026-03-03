@@ -226,10 +226,10 @@ class OrderScreen extends StatelessWidget {
                         "No Screenshot",
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _actionMenu(order),
-                    ),
+                    // Align(
+                    //   alignment: Alignment.centerRight,
+                    //   child: _actionMenu(order),
+                    // ),
                   ],
                 ),
               ],

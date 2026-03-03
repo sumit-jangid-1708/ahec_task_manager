@@ -1,5 +1,7 @@
 import 'package:ahec_task_manager/model/login_model.dart';
 import 'package:ahec_task_manager/res/components/app_alerts.dart';
+import 'package:ahec_task_manager/res/components/widgets/app_dialog.dart';
+import 'package:ahec_task_manager/view_models/controller/base_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -14,7 +16,7 @@ import '../dashboard_controller.dart';
 import '../list_controller.dart';
 import '../order_controller.dart';
 
-class AuthController extends GetxController {
+class AuthController extends GetxController with BaseController {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -59,8 +61,8 @@ class AuthController extends GetxController {
         return;
       }
 
-      final List<BiometricType> availableBiometrics =
-      await auth.getAvailableBiometrics();
+      final List<BiometricType> availableBiometrics = await auth
+          .getAvailableBiometrics();
       print("Available biometrics: $availableBiometrics");
 
       final bool didAuthenticate = await auth.authenticate(
@@ -101,66 +103,93 @@ class AuthController extends GetxController {
         Get.offAllNamed(RouteName.dashboard);
         return;
       }
-
-      Future.delayed(const Duration(milliseconds: 300), () {
-        AppAlerts.error(errorMsg);
-      });
+      AppAlerts.error(errorMsg);
     } catch (e) {
       print("Unexpected error during authentication: $e");
       isAuthenticated.value = false;
-
-      Future.delayed(const Duration(milliseconds: 300), () {
-        AppAlerts.error("Something went wrong during authentication.");
-      });
+      AppAlerts.error("Something went wrong during authentication.");
     }
   }
 
   Future<void> login() async {
-    Map<String, String> data = {
-      "team_email": usernameController.text.trim(),
-      "team_password": passwordController.text.trim(),
-    };
-
     try {
       isLoading.value = true;
-
-      final response = await _authService.loginApi(data);
+      final response = await _authService.loginApi({
+        "team_email": usernameController.text.trim(),
+        "team_password": passwordController.text.trim(),
+      });
       loginResponse = LoginResponseModel.fromJson(response);
 
-      // Clear ALL previous user session data before saving new user data.
-      // This prevents stale data from a previous login affecting the new session.
       _clearStorage();
 
-      // Save only login-specific session data.
-      // Note: RM list ID is NOT stored here — it is always derived fresh
-      // by matching teamName + teamEmail against the RM list API.
       storage.write(StorageKeys.token, loginResponse!.user.token);
       storage.write(StorageKeys.isLoggedIn, true);
       storage.write(StorageKeys.teamName, loginResponse!.user.teamName);
       storage.write(StorageKeys.teamEmail, loginResponse!.user.teamEmail);
 
       isLoggedIn.value = true;
-      Get.offAllNamed(RouteName.dashboard);
-        AppAlerts.success("Login Successful");
 
+      Get.offAllNamed(RouteName.dashboard);
     } on AppExceptions catch (e) {
-      AppAlerts.error(e.cleanMessage);
-    } catch (e) {
-      AppAlerts.error("Something went wrong. Please try again.");
+      handleError(e);
+    } catch (e, stackTrace) {
+      debugPrint("Login Error: $e");
+      debugPrint("StackTrace: $stackTrace");
+      handleError("Something went wrong. Please try again.");
     } finally {
       isLoading.value = false;
     }
   }
+
+  // Future<void> login() async {
+  //   Map<String, String> data = {
+  //     "team_email": usernameController.text.trim(),
+  //     "team_password": passwordController.text.trim(),
+  //   };
+  //
+  //   try {
+  //     isLoading.value = true;
+  //
+  //     final response = await _authService.loginApi(data);
+  //     loginResponse = LoginResponseModel.fromJson(response);
+  //
+  //     // Clear ALL previous user session data before saving new user data.
+  //     // This prevents stale data from a previous login affecting the new session.
+  //     _clearStorage();
+  //
+  //     // Save only login-specific session data.
+  //     // Note: RM list ID is NOT stored here — it is always derived fresh
+  //     // by matching teamName + teamEmail against the RM list API.
+  //     storage.write(StorageKeys.token, loginResponse!.user.token);
+  //     storage.write(StorageKeys.isLoggedIn, true);
+  //     storage.write(StorageKeys.teamName, loginResponse!.user.teamName);
+  //     storage.write(StorageKeys.teamEmail, loginResponse!.user.teamEmail);
+  //
+  //     isLoggedIn.value = true;
+  //     handleSuccess("Login Successful");
+  //     Get.offAllNamed(RouteName.dashboard);
+  //     // AppAlerts.success("Login Successful");
+  //
+  //   } on AppExceptions catch (e) {
+  //     // AppAlerts.error(e.cleanMessage);
+  //     handleError(e.cleanMessage);
+  //   } catch (e) {
+  //     handleError("Something went wrong. Please try again.");
+  //     // AppAlerts.error("Something went wrong. Please try again.");
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
 
   void logout() {
     _clearStorage();
     isLoggedIn.value = false;
     isAuthenticated.value = false;
 
-    Get.delete<DashboardController>(force: true);
-    Get.delete<OrderController>(force: true);
-    Get.delete<ClientController>(force: true);
-    Get.delete<ListController>(force: true);
+    // Get.delete<DashboardController>(force: true);
+    // Get.delete<OrderController>(force: true);
+    // Get.delete<ClientController>(force: true);
+    // Get.delete<ListController>(force: true);
 
     Get.offAllNamed(RouteName.auth);
   }

@@ -1,3 +1,4 @@
+import 'package:ahec_task_manager/model/client_model.dart';
 import 'package:ahec_task_manager/view/client/add_client_form.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -139,7 +140,8 @@ class ClientScreen extends StatelessWidget {
                               date: _formatDate(client.userCreatedAt),
                               email: client.userEmail,
                               mobile: client.mobile,
-                              status: _getStatus(client.userStatus),
+                              status: client.statusText,
+                              statusColor: client.statusColor,
                               university: client.univercityName,
                               onEdit: () {
                                 print('Edit client: ${client.userName}');
@@ -172,7 +174,8 @@ class ClientScreen extends StatelessWidget {
                               date: _formatDate(client.userCreatedAt),
                               email: client.userEmail,
                               mobile: client.mobile,
-                              status: _getStatus(client.userStatus),
+                              status: client.statusText,
+                              statusColor: client.statusColor,
                               university: client.univercityName,
                               onEdit: () {
                                 print('Edit client: ${client.userName}');
@@ -204,7 +207,8 @@ class ClientScreen extends StatelessWidget {
                             date: _formatDate(client.userCreatedAt),
                             email: client.userEmail,
                             mobile: client.mobile,
-                            status: _getStatus(client.userStatus),
+                            status: client.statusText,
+                            statusColor: client.statusColor,
                             university: client.univercityName,
                             onEdit: () {
                               print('Edit client: ${client.userName}');
@@ -261,16 +265,16 @@ class ClientScreen extends StatelessWidget {
     }
   }
 
-  String _getStatus(String statusCode) {
-    switch (statusCode) {
-      case "1":
-        return "Active";
-      case "2":
-        return "Pending";
-      case "0":
-        return "Inactive";
-      default:
-        return "Unknown";
-    }
-  }
+  // String _getStatus(String statusCode) {
+  //   switch (statusCode) {
+  //     case "1":
+  //       return "Active";
+  //     case "2":
+  //       return "Pending";
+  //     case "0":
+  //       return "Inactive";
+  //     default:
+  //       return "Unknown";
+  //   }
+  // }
 }

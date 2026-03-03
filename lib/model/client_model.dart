@@ -1,3 +1,7 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+
 class ClientModel {
   final int status;
   final UsersListModel usersList;
@@ -185,5 +189,47 @@ class RmUsers {
       emid: json['emid'] ?? '',
       empType: json['emp_type'] ?? '',
     );
+  }
+}
+
+
+extension ClientStatus on ClientData {
+
+  String get statusText {
+    if (isMultipal == "0") return "Auto-Approved";
+
+    if (isMultipal == "1") {
+      switch (isApproved) {
+        case "0":
+          return "Pending";
+        case "1":
+          return "Admin-Approved";
+        case "2":
+          return "Admin-Rejected";
+        default:
+          return "Unknown";
+      }
+    }
+
+    return "Unknown";
+  }
+
+  Color get statusColor {
+    if (isMultipal == "0") return Colors.green;
+
+    if (isMultipal == "1") {
+      switch (isApproved) {
+        case "0":
+          return Colors.orange;
+        case "1":
+          return Colors.blue;
+        case "2":
+          return Colors.red;
+        default:
+          return Colors.grey;
+      }
+    }
+
+    return Colors.grey;
   }
 }

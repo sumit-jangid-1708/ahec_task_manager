@@ -7,6 +7,7 @@ class ClientCard extends StatelessWidget {
   final String email;
   final String mobile;
   final String status;
+  final Color statusColor;
   final String university;
   final VoidCallback onEdit;
 
@@ -18,6 +19,7 @@ class ClientCard extends StatelessWidget {
     required this.email,
     required this.mobile,
     required this.status,
+    required this.statusColor,
     required this.onEdit,
     required this.university,
   });
@@ -84,33 +86,33 @@ color: Colors.white,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade100,
+                    color: statusColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     status,
                     style: const TextStyle(
-                      color: Colors.green,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
 
                 // Edit Button
-                ElevatedButton.icon(
-                  onPressed: onEdit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3F63F4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  icon: const Icon(Icons.edit, size: 18, color: Colors.white),
-                  label: const Text(
-                    "Edit",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
+                // ElevatedButton.icon(
+                //   onPressed: onEdit,
+                //   style: ElevatedButton.styleFrom(
+                //     backgroundColor: const Color(0xFF3F63F4),
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(8),
+                //     ),
+                //   ),
+                //   icon: const Icon(Icons.edit, size: 18, color: Colors.white),
+                //   label: const Text(
+                //     "Edit",
+                //     style: TextStyle(color: Colors.white),
+                //   ),
+                // ),
               ],
             ),
           ],
