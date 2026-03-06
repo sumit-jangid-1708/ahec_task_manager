@@ -1,9 +1,7 @@
-import 'package:ahec_task_manager/res/components/widgets/app_dialog.dart';
+import 'package:ahec_task_manager/res/components/widgets/monthly_chart.dart';
 import 'package:ahec_task_manager/view_models/controller/dashboard_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import '../../res/components/widgets/monthly_chart.dart';
 import '../../view_models/controller/auth/auth_controller.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -27,38 +25,36 @@ class HomeScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-
-          // ICON FIX
-          Flexible(
-            child: Icon(icon, size: 38, color: Colors.white30),
-          ),
+          Icon(icon, size: 38, color: Colors.white30),
         ],
       ),
     );
   }
-
 
   // Large tile widget
   Widget largeTile({
@@ -77,41 +73,40 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-
-          Flexible(
-            child: Icon(icon, size: 50, color: Colors.white70),
-          )
+          Icon(icon, size: 50, color: Colors.white70),
         ],
       ),
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final DashboardController controller = Get.find<DashboardController>();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -133,25 +128,20 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.only(right: 16),
               child: IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white, size: 28),
-                // onPressed: (){
-                //   AppDialog.confirm(
-                //       message: "Are you sure you want to Logout?",
-                //       onConfirm:()=> Get.find<AuthController>().logout(),
-                //   );
-                // },
                 onPressed: () => Get.find<AuthController>().logout(),
               ),
             ),
           ],
         ),
       ),
-
       body: Obx(() {
-        if (controller.isLoading.value && controller.dashboardData.value == null) {
+        // ✅ Check if adminDashboardData is loading
+        if (controller.isLoading.value && controller.adminDashboardData.value == null) {
           return const Center(
             child: CircularProgressIndicator(color: Color(0xFF3F63F4)),
           );
         }
+
         return RefreshIndicator(
           color: const Color(0xFF3F63F4),
           onRefresh: controller.refreshDashboard,
@@ -210,31 +200,33 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // ----------- LARGE TILE 1 ----------
+                // ----------- LARGE TILE 1 (Week Word Count) ----------
                 largeTile(
                   color: Colors.lightBlue,
-                  value: "22600",
+                  value: "${controller.weekWordCount}",
                   label: "This Week Word Count",
                   icon: Icons.description,
                 ),
 
                 const SizedBox(height: 16),
 
-                // ----------- LARGE TILE 2 ----------
+                // ----------- LARGE TILE 2 (Month Word Count) ----------
                 largeTile(
                   color: Colors.amber,
-                  value: "44100",
-                  label: "November Word Count",
+                  value: "${controller.monthWordCount}",
+                  label: "${controller.currentMonth} Word Count",
                   icon: Icons.description,
                 ),
+
                 const SizedBox(height: 25),
-                MonthlyChart(),
+
+                // ----------- CHART ----------
+                const MonthlyChart(),
               ],
             ),
           ),
         );
-      })
-
+      }),
     );
   }
 }

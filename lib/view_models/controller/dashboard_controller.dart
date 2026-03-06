@@ -2,18 +2,21 @@ import 'package:ahec_task_manager/model/dashboard_data_model.dart';
 import 'package:ahec_task_manager/view_models/controller/base_controller.dart';
 import 'package:ahec_task_manager/view_models/services/dashboard_service.dart';
 import 'package:get/get.dart';
-
 import '../../data/app_exceptions.dart';
-import '../../res/components/app_alerts.dart';
+import '../../model/dashboard_response_model.dart';
 import 'list_controller.dart';
-
-class DashboardController extends GetxController with BaseController{
+class DashboardController extends GetxController with BaseController {
   final DashboardService _dashboardService = DashboardService();
-  final ListController _listController = Get.find<ListController>(); // CHANGED
+  final ListController _listController = Get.find<ListController>();
 
   final dashboardData = Rx<DashboardDataModel?>(null);
+
+  // ✅ FIXED: Changed from RxList to Rx
+  final adminDashboardData = Rx<DashboardResponseModel?>(null);
+
   var selectedIndex = 0.obs;
   var isLoading = false.obs;
+  final currentYear = DateTime.now().year;
 
   String get currentMonth {
     const months = [
@@ -28,141 +31,68 @@ class DashboardController extends GetxController with BaseController{
   void onInit() {
     super.onInit();
 
-    ever(_listController.userRmId, (int rmId) { // CHANGED
-      if (rmId != 0) getDashboardData();
+    ever(_listController.userRmId, (int rmId) {
+      if (rmId != 0) getAdminDashboardData(); // ✅ Changed to new API
     });
 
-    if (_listController.userRmId.value != 0) { // CHANGED
-      getDashboardData();
+    if (_listController.userRmId.value != 0) {
+      getAdminDashboardData(); // ✅ Changed to new API
     }
   }
 
   void changeTab(int index) => selectedIndex.value = index;
 
-  Future<void> getDashboardData() async {
-    final int rmId = _listController.userRmId.value; // CHANGED
+  /// ✅ New API - Admin Dashboard
+  Future<void> getAdminDashboardData() async {
+    final int rmId = _listController.userRmId.value;
 
     if (rmId == 0) {
       print("Dashboard load skipped: RM ID not yet resolved.");
       return;
     }
 
+    final Map<String, dynamic> data = {
+      "year": currentYear,
+      "rm_id": rmId
+    };
+
     try {
       isLoading.value = true;
-      final response = await _dashboardService.getDashboardData(rmId);
-      dashboardData.value = DashboardDataModel.fromJson(response);
-      print("Dashboard data loaded successfully.");
+      final response = await _dashboardService.getAdminDashboardData(data);
+
+      // ✅ FIXED: Assign directly to .value
+      adminDashboardData.value = DashboardResponseModel.fromJson(response);
+
+      print("✅ Admin Dashboard data loaded successfully.");
     } on AppExceptions catch (e) {
       handleError(e.cleanMessage);
-      // AppAlerts.error(e.cleanMessage);
     } catch (e) {
       handleError("Failed to load dashboard data.");
-      // AppAlerts.error("Failed to load dashboard data.");
+      print("❌ Dashboard Error: $e");
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> refreshDashboard() async => await getDashboardData();
-  String get weekInr => dashboardData.value?.data.weekTotalAmount.inr ?? "0.00";
-  String get weekAud => dashboardData.value?.data.weekTotalAmount.aud ?? "0.00";
-  String get monthInr => dashboardData.value?.data.monthTotalCurrencyAmount.inr ?? "0.00";
-  String get monthAud => dashboardData.value?.data.monthTotalCurrencyAmount.aud ?? "0.00";
+  Future<void> refreshDashboard() async => await getAdminDashboardData();
+
+  // ✅ Getters for Summary Data (from adminDashboardData)
+  String get weekInr => adminDashboardData.value?.data.summary.weekInr.toString() ?? "0";
+  String get weekAud => adminDashboardData.value?.data.summary.weekAud.toStringAsFixed(2) ?? "0.00";
+  String get monthInr => adminDashboardData.value?.data.summary.monthInr.toString() ?? "0";
+  String get monthAud => adminDashboardData.value?.data.summary.monthAud.toStringAsFixed(2) ?? "0.00";
+
+  // ✅ Word Count getters
+  int get weekWordCount => adminDashboardData.value?.data.summary.weekWordCount ?? 0;
+  int get monthWordCount => adminDashboardData.value?.data.summary.monthWordCount ?? 0;
+
+  // ✅ Chart data getters
+  List<String> get monthNames =>
+      adminDashboardData.value?.data.monthlyAudOrders.monthNames ?? [];
+
+  List<double> get audAmounts =>
+      adminDashboardData.value?.data.monthlyAudOrders.audAmounts ?? [];
+
+  List<int> get orderCounts =>
+      adminDashboardData.value?.data.monthlyAudOrders.orderCounts ?? [];
 }
-
-
-// import 'package:ahec_task_manager/model/dashboard_data_model.dart';
-// import 'package:ahec_task_manager/view_models/services/dashboard_service.dart';
-// import 'package:get/get.dart';
-//
-// import '../../data/app_exceptions.dart';
-// import '../../res/components/app_alerts.dart';
-// import 'client_controller.dart';
-//
-// class DashboardController extends GetxController {
-//   final DashboardService _dashboardService = DashboardService();
-//   final ClientController _clientController = Get.find<ClientController>();
-//
-//   final dashboardData = Rx<DashboardDataModel?>(null);
-//   var selectedIndex = 0.obs;
-//   // var currentMonth = ''.obs;
-//   var isLoading = false.obs;
-//
-//   String get currentMonth {
-//     const months = [
-//       "January", "February", "March", "April",
-//       "May", "June", "July", "August",
-//       "September", "October", "November", "December",
-//     ];
-//
-//     return months[DateTime.now().month - 1];
-//   }
-//
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     // _setCurrentMonth();
-//
-//     // Auto-load dashboard once RM ID is resolved
-//     ever(_clientController.userRmId, (int rmId) {
-//       if (rmId != 0) {
-//         getDashboardData();
-//       }
-//     });
-//
-//     // Load immediately if RM ID already available
-//     if (_clientController.userRmId.value != 0) {
-//       getDashboardData();
-//     }
-//   }
-//
-//   void changeTab(int index) {
-//     selectedIndex.value = index;
-//   }
-//
-//   // void _setCurrentMonth() {
-//   //   const months = [
-//   //     "January", "February", "March", "April",
-//   //     "May", "June", "July", "August",
-//   //     "September", "October", "November", "December",
-//   //   ];
-//   //   currentMonth.value = months[DateTime.now().month - 1];
-//   //   print(currentMonth);
-//   // }
-//
-//   Future<void> getDashboardData() async {
-//     final int rmId = _clientController.userRmId.value;
-//
-//     if (rmId == 0) {
-//       print("Dashboard load skipped: RM ID not yet resolved.");
-//       return;
-//     }
-//
-//     try {
-//       isLoading.value = true;
-//
-//       final response = await _dashboardService.getDashboardData(rmId);
-//       dashboardData.value = DashboardDataModel.fromJson(response);
-//
-//       print("Dashboard data loaded successfully.");
-//     } on AppExceptions catch (e) {
-//       print("Dashboard fetch error: $e");
-//       AppAlerts.error(e.cleanMessage);
-//     } catch (e) {
-//       print("Unexpected dashboard error: $e");
-//       AppAlerts.error("Failed to load dashboard data.");
-//     } finally {
-//       isLoading.value = false;
-//     }
-//   }
-//
-//   Future<void> refreshDashboard() async {
-//     await getDashboardData();
-//   }
-//
-//   // Convenience getters for UI
-//   String get weekInr => dashboardData.value?.data.weekTotalAmount.inr ?? "0.00";
-//   String get weekAud => dashboardData.value?.data.weekTotalAmount.aud ?? "0.00";
-//   String get monthInr => dashboardData.value?.data.monthTotalCurrencyAmount.inr ?? "0.00";
-//   String get monthAud => dashboardData.value?.data.monthTotalCurrencyAmount.aud ?? "0.00";
-// }

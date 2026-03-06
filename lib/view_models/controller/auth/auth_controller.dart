@@ -97,7 +97,6 @@ class AuthController extends GetxController with BaseController {
         default:
           errorMsg = "Authentication error: ${e.description}";
       }
-
       if (allowAccess) {
         isAuthenticated.value = true;
         Get.offAllNamed(RouteName.dashboard);

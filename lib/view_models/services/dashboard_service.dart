@@ -8,4 +8,9 @@ class DashboardService {
     final response = await _apiServices.getApi("${AppUrl.dashboardData}/$rmId");
     return response;
   }
+
+  Future<dynamic> getAdminDashboardData(data) async {
+    final response = await _apiServices.postApi(data, AppUrl.adminDashboardData);
+    return response;
+  }
 }
